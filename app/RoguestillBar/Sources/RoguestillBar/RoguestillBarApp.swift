@@ -56,7 +56,7 @@ final class AppModel: ObservableObject {
     var rows: [RuleRow] {
         (store.connection.status?.rules ?? []).map {
             RuleRow(name: $0.name, usage: "Used \(formatDuration($0.usedSecs)) · Remaining \(formatDuration($0.remainingSecs))",
-                    runs: "Runs today: \($0.runsToday)", degraded: $0.degraded)
+                    runs: runsText($0), degraded: $0.degraded)
         }
     }
 

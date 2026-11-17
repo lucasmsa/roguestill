@@ -45,6 +45,7 @@ fn midnight_and_configured_reset_split_usage() {
             limit_minutes: 90,
             reset_hour: hour,
             idle_pause_minutes: 5,
+            limit_runs: None,
         };
         let clock = FakeClock::new(86400 + u64::from(hour) * 3600 - 10);
         let mut engine = Engine::new(&clock, &rule, 100);
@@ -222,4 +223,51 @@ fn config_json_round_trip_and_validation() {
     assert_ne!(bad, json);
     assert!(from_json(&bad).is_err());
     assert!(from_json("{\"rule\":[]} junk").is_err());
+}
+
+#[test]
+fn run_limit_ends_the_day_like_the_time_limit() {
+    let mut rule = rule();
+    rule.budget = Budget::DailyTime {
+        limit_minutes: 90,
+        reset_hour: 0,
+        idle_pause_minutes: 5,
+        limit_runs: Some(2),
+    };
+    let clock = FakeClock::new(1000);
+    let mut engine = Engine::new(&clock, &rule, 0);
+    engine.runs = 1;
+    assert_eq!(
+        engine.tick(&clock, &rule, true, None).state,
+        State::Ok { remaining: 5400 }
+    );
+    engine.runs = 2;
+    clock.advance(2);
+    assert_eq!(
+        engine.tick(&clock, &rule, true, None).state,
+        State::Warning { kill_in: 10 }
+    );
+    clock.advance(10);
+    assert_eq!(
+        engine.tick(&clock, &rule, true, None).state,
+        State::Exceeded
+    );
+    let mut idle = Engine::new(&clock, &rule, 0);
+    idle.runs = 2;
+    idle.tick(&clock, &rule, false, None);
+    assert_eq!(idle.tick(&clock, &rule, true, None).state, State::Exceeded);
+    rule.budget = Budget::DailyTime {
+        limit_minutes: 90,
+        reset_hour: 0,
+        idle_pause_minutes: 5,
+        limit_runs: Some(0),
+    };
+    assert!(roguestill_core::rules::from_json(
+        &roguestill_core::rules::to_json(&roguestill_core::rules::Config {
+            noita_save_path: None,
+            rule: vec![rule]
+        })
+        .unwrap()
+    )
+    .is_err());
 }

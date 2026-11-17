@@ -40,6 +40,8 @@ pub enum Budget {
         reset_hour: u8,
         #[serde(default = "idle_default")]
         idle_pause_minutes: u64,
+        #[serde(default)]
+        limit_runs: Option<u64>,
     },
 }
 fn idle_default() -> u64 {
@@ -53,7 +55,14 @@ impl Budget {
                 limit_minutes,
                 reset_hour,
                 idle_pause_minutes,
+                ..
             } => (limit_minutes * 60, reset_hour, idle_pause_minutes * 60),
+        }
+    }
+
+    pub fn run_limit(&self) -> Option<u64> {
+        match *self {
+            Self::DailyTime { limit_runs, .. } => limit_runs,
         }
     }
 }
@@ -85,11 +94,13 @@ pub fn parse(input: &str) -> Result<Config, String> {
             limit_minutes,
             reset_hour,
             idle_pause_minutes,
+            limit_runs,
         } = rule.budget;
         if rule.name.trim().is_empty()
             || rule.target.process.trim().is_empty()
             || !names.insert(&rule.name)
             || reset_hour > 23
+            || limit_runs == Some(0)
             || limit_minutes == 0
             || limit_minutes > u64::MAX / 60
             || idle_pause_minutes > u64::MAX / 60

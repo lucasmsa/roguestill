@@ -30,6 +30,7 @@ pub enum State {
 
 pub struct Engine {
     pub used: u64,
+    pub runs: u64,
     pub day: i64,
     last: u64,
     running: bool,
@@ -47,6 +48,7 @@ impl Engine {
     pub fn new(clock: &impl Clock, rule: &Rule, used: u64) -> Self {
         Self {
             used,
+            runs: 0,
             day: day(clock, rule.budget.values().1).0,
             last: clock.monotonic_secs(),
             running: false,
@@ -79,12 +81,14 @@ impl Engine {
         };
         if today != self.day {
             self.used = 0;
+            self.runs = 0;
             self.day = today;
             self.warning_at = None;
         }
         let active = active - previous_active;
         self.used = self.used.saturating_add(active);
-        let state = if self.used < limit {
+        let runs_done = rule.budget.run_limit().is_some_and(|max| self.runs >= max);
+        let state = if self.used < limit && !runs_done {
             State::Ok {
                 remaining: limit - self.used,
             }

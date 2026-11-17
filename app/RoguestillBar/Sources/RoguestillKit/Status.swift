@@ -19,6 +19,7 @@ public struct RuleStatus: Codable, Equatable, Sendable {
     public let degraded: Bool
     public let state: String
     public let blockedSeq: UInt64
+    public let limitRuns: UInt64?
 
     enum CodingKeys: String, CodingKey {
         case name, target, degraded, state
@@ -26,10 +27,11 @@ public struct RuleStatus: Codable, Equatable, Sendable {
         case remainingSecs = "remaining_secs"
         case runsToday = "runs_today"
         case blockedSeq = "blocked_seq"
+        case limitRuns = "limit_runs"
     }
 
     public init(name: String, target: String, usedSecs: UInt64, remainingSecs: UInt64,
-                runsToday: UInt64, degraded: Bool, state: String, blockedSeq: UInt64 = 0) {
+                runsToday: UInt64, degraded: Bool, state: String, blockedSeq: UInt64 = 0, limitRuns: UInt64? = nil) {
         self.name = name
         self.target = target
         self.usedSecs = usedSecs
@@ -38,6 +40,7 @@ public struct RuleStatus: Codable, Equatable, Sendable {
         self.degraded = degraded
         self.state = state
         self.blockedSeq = blockedSeq
+        self.limitRuns = limitRuns
     }
 
     public init(from decoder: any Decoder) throws {
@@ -50,5 +53,11 @@ public struct RuleStatus: Codable, Equatable, Sendable {
         degraded = try c.decode(Bool.self, forKey: .degraded)
         state = try c.decode(String.self, forKey: .state)
         blockedSeq = try c.decodeIfPresent(UInt64.self, forKey: .blockedSeq) ?? 0
+        limitRuns = try c.decodeIfPresent(UInt64.self, forKey: .limitRuns)
     }
+}
+
+public func runsText(_ rule: RuleStatus) -> String {
+    guard let limit = rule.limitRuns else { return "Runs today: \(rule.runsToday)" }
+    return "Runs today: \(rule.runsToday) of \(limit)"
 }

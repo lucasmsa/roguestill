@@ -15,4 +15,6 @@ pub struct RuleStatus {
     pub state: String,
     #[serde(default)]
     pub blocked_seq: u64,
+    #[serde(default)]
+    pub limit_runs: Option<u64>,
 }

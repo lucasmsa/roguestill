@@ -20,12 +20,14 @@ public struct GameRule: Codable, Equatable, Sendable, Identifiable {
         public var limitMinutes: Int
         public var resetHour: Int
         public var idlePauseMinutes: Int
+        public var limitRuns: Int?
 
         enum CodingKeys: String, CodingKey {
             case kind
             case limitMinutes = "limit_minutes"
             case resetHour = "reset_hour"
             case idlePauseMinutes = "idle_pause_minutes"
+            case limitRuns = "limit_runs"
         }
     }
 
@@ -49,7 +51,7 @@ public struct GameRule: Codable, Equatable, Sendable, Identifiable {
 
     public static func new(name: String, process: String) -> GameRule {
         GameRule(name: name, target: Target(process: process), adapter: nil,
-                 budget: Budget(kind: "daily_time", limitMinutes: 60, resetHour: 0, idlePauseMinutes: 5),
+                 budget: Budget(kind: "daily_time", limitMinutes: 60, resetHour: 0, idlePauseMinutes: 5, limitRuns: nil),
                  action: Action(warnSeconds: 10, kill: true, relaunch: "kill_again"))
     }
 }

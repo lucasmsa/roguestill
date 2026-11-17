@@ -402,3 +402,17 @@ private let sampleConfig = #"{"noita_save_path":"~/save00","rule":[{"name":"Noit
     let failing = ProcessConfigClient(executable: dir.appendingPathComponent("missing"))
     await #expect(throws: (any Error).self) { try await failing.load() }
 }
+
+@Test func runLimitInStatusAndConfig() throws {
+    let json = #"{"v":1,"rules":[{"name":"g","target":"g.exe","used_secs":1,"remaining_secs":2,"runs_today":2,"degraded":false,"state":"ok","limit_runs":5}]}"#
+    let decoded = try JSONDecoder().decode(Status.self, from: Data(json.utf8))
+    #expect(decoded.rules[0].limitRuns == 5)
+    #expect(runsText(decoded.rules[0]) == "Runs today: 2 of 5")
+    #expect(runsText(rule()) == "Runs today: 2")
+    var config = try JSONDecoder().decode(RulesConfig.self, from: Data(sampleConfig.utf8))
+    #expect(config.rule[0].budget.limitRuns == nil)
+    config.rule[0].budget.limitRuns = 3
+    let object = try #require(JSONSerialization.jsonObject(with: JSONEncoder().encode(config)) as? [String: Any])
+    let budget = try #require(((object["rule"] as? [[String: Any]])?.first)?["budget"] as? [String: Any])
+    #expect(budget["limit_runs"] as? Int == 3)
+}
