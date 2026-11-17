@@ -349,3 +349,12 @@ private actor SuspendedClient: StatusClient {
     #expect(shouldReloadWidget(previous: a, next: blocked, lastReload: date, now: date.addingTimeInterval(5)))
     #expect(shouldReloadWidget(previous: a, next: down, lastReload: date, now: date.addingTimeInterval(5)))
 }
+
+@Test func agentMessages() {
+    #expect(agentMessage(for: .enabled) == nil)
+    #expect(agentMessage(for: .notRegistered) == "Daemon not installed")
+    #expect(agentMessage(for: .requiresApproval) == "Allow Roguestill in Login Items")
+    #expect(agentMessage(for: .unavailable) == "Daemon missing from the app")
+    #expect(agentNeedsSettings(.requiresApproval))
+    #expect(!agentNeedsSettings(.enabled))
+}

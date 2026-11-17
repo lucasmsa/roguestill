@@ -103,3 +103,16 @@ pub fn parse(input: &str) -> Result<Config, String> {
 pub fn render(config: &Config) -> Result<String, toml::ser::Error> {
     toml::to_string_pretty(config)
 }
+
+const DEFAULT_RULES: &str = include_str!("../../../config/rules.example.toml");
+
+pub fn ensure_default(path: &std::path::Path) -> std::io::Result<bool> {
+    if path.exists() {
+        return Ok(false);
+    }
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+    std::fs::write(path, DEFAULT_RULES)?;
+    Ok(true)
+}

@@ -47,6 +47,9 @@ fn main() -> Result<()> {
         .nth(1)
         .map(PathBuf::from)
         .unwrap_or_else(|| base.join("rules.toml"));
+    if rules::ensure_default(&config_path)? {
+        eprintln!("wrote default rules to {}", config_path.display());
+    }
     let mut config_text = fs::read_to_string(&config_path)?;
     let mut config = rules::parse(&config_text)?;
     let socket = base.join("roguestilld.sock");

@@ -25,6 +25,7 @@ final class AppModel: ObservableObject {
     let appearance: Appearance
     private let panel: NSPanel
     private var subscriptions: Set<AnyCancellable> = []
+    @Published var agent: AgentStatus = installDaemon()
     private var lastSnapshot: Snapshot?
     private var lastReload: Date?
 
@@ -67,7 +68,7 @@ final class AppModel: ObservableObject {
     var message: String? {
         switch store.connection {
         case .connected: nil
-        case .daemonDown: "Daemon not running"
+        case .daemonDown: agentMessage(for: agent) ?? "Daemon not running"
         case .unsupportedVersion: "Update the app"
         }
     }
@@ -78,6 +79,10 @@ final class AppModel: ObservableObject {
         formatter.dateFormat = "HH:mm:ss"
         return "last seen \(formatter.string(from: date))"
     }
+
+    var needsSettings: Bool { agentNeedsSettings(agent) }
+
+    func refreshAgent() { agent = installDaemon() }
 
     func quit() {
         store.stop()
@@ -124,6 +129,8 @@ struct MenuContent: View {
     let message: String?
     let lastSeen: String?
     let offline: Bool
+    let needsSettings: Bool
+    let openSettings: () -> Void
     let quit: () -> Void
 
     var body: some View {
@@ -138,6 +145,7 @@ struct MenuContent: View {
             }
             .foregroundStyle(offline ? .secondary : .primary)
         }
+        if needsSettings { Button("Open Login Items", action: openSettings) }
         Divider()
         Button("Quit", action: quit).keyboardShortcut("q")
     }
@@ -213,7 +221,8 @@ struct RoguestillBarApp: App {
     var body: some Scene {
         MenuBarExtra("roguestill", systemImage: model.icon) {
             MenuContent(rows: model.rows, message: model.message, lastSeen: model.lastSeen,
-                        offline: model.offline, quit: model.quit)
+                        offline: model.offline, needsSettings: model.needsSettings,
+                        openSettings: { openLoginItems(); model.refreshAgent() }, quit: model.quit)
         }
     }
 }

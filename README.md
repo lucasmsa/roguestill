@@ -13,6 +13,14 @@ Currently supports Noita (run through CrossOver on macOS). Design decisions are 
 - `config/rules.example.toml`: example rules.
 - `packaging/`: launchd plist template.
 
+## Install
+
+```sh
+DEVELOPMENT_TEAM=<your team id> scripts/build-app.sh
+```
+
+This builds `Roguestill.app` with the daemon inside and opens it from `~/Applications`. On first launch the app registers the daemon as a login agent; approve it once in System Settings > Login Items. The daemon writes default rules (Noita, 90 minutes a day) to `~/Library/Application Support/roguestill/rules.toml` if none exist; edit that file to change them.
+
 ## Build
 
 ```sh

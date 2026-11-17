@@ -20,6 +20,23 @@ targets:
         excludes: ["Resources"]
       - path: Sources/RoguestillBar/Resources
         type: folder
+      - path: ../../target/release/roguestilld
+        buildPhase:
+          copyFiles:
+            destination: executables
+            subpath: ""
+        attributes: [CodeSignOnCopy]
+      - path: LaunchAgents/com.lucasmsa.roguestill.daemon.plist
+        buildPhase:
+          copyFiles:
+            destination: wrapper
+            subpath: Contents/Library/LaunchAgents
+    preBuildScripts:
+      - name: Build daemon
+        script: |
+          export PATH="$HOME/.cargo/bin:$PATH"
+          cd "$SRCROOT/../.."
+          cargo build --release -p roguestilld
     dependencies:
       - package: RoguestillKit
       - target: RoguestillWidget

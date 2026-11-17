@@ -198,3 +198,15 @@ fn death_seen_while_new_run_already_loading() {
         }]
     );
 }
+
+#[test]
+fn default_rules_are_written_once_and_parse() {
+    let dir = std::env::temp_dir().join(format!("roguestill-default-{}", std::process::id()));
+    let path = dir.join("nested/rules.toml");
+    assert!(roguestill_core::rules::ensure_default(&path).unwrap());
+    assert!(parse(&std::fs::read_to_string(&path).unwrap()).is_ok());
+    std::fs::write(&path, "custom").unwrap();
+    assert!(!roguestill_core::rules::ensure_default(&path).unwrap());
+    assert_eq!(std::fs::read_to_string(&path).unwrap(), "custom");
+    std::fs::remove_dir_all(dir).unwrap();
+}
