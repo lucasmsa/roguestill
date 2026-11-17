@@ -10,7 +10,7 @@ let package = Package(
     ],
     targets: [
         .target(name: "RunLimiterKit"),
-        .executableTarget(name: "RunLimiterBar", dependencies: ["RunLimiterKit"]),
+        .executableTarget(name: "RunLimiterBar", dependencies: ["RunLimiterKit"], resources: [.copy("Resources")]),
         .testTarget(name: "RunLimiterKitTests", dependencies: ["RunLimiterKit"])
     ]
 )

@@ -1,4 +1,5 @@
 import AppKit
+import CoreText
 import Combine
 import RunLimiterKit
 import SwiftUI
@@ -7,9 +8,14 @@ struct Appearance {
     let normalIcon = "hourglass"
     let failureIcon = "exclamationmark.triangle"
     let shieldIcon = "shield.fill"
-    let panelSize = CGSize(width: 360, height: 100)
+    let panelSize = CGSize(width: 360, height: 104)
     let screenInset: CGFloat = 20
     let spacing: CGFloat = 12
+    let ground = Color.black
+    let frame = Color(red: 0.36, green: 0.23, blue: 0.18)
+    let text = Color(red: 0.94, green: 0.90, blue: 0.85)
+    let barFill = Color(red: 1.0, green: 0.65, blue: 0.24)
+    let barTrack = Color(red: 0.17, green: 0.11, blue: 0.08)
 }
 
 @MainActor
@@ -21,6 +27,7 @@ final class AppModel: ObservableObject {
 
     init(appearance: Appearance = Appearance()) {
         self.appearance = appearance
+        registerPixelFont()
         store = StatusStore()
         panel = NSPanel(contentRect: NSRect(origin: .zero, size: appearance.panelSize),
                         styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
@@ -78,13 +85,9 @@ final class AppModel: ObservableObject {
             panel.orderOut(nil)
             return
         }
-        let text: String
-        switch state {
-        case .warning(let target, let seconds): text = "\(target): \(seconds)s remaining"
-        case .blockCard(let target, let reason): text = "\(target) blocked: \(reason)"
-        case .hidden: return
-        }
-        panel.contentView = NSHostingView(rootView: OverlayView(text: text, appearance: appearance))
+        guard let content = overlayContent(for: state) else { return }
+        panel.contentView = NSHostingView(rootView: OverlayView(content: content, icon: gameIcon(content.gameKey),
+                                                                appearance: appearance))
         let frame = screen.visibleFrame
         panel.setFrameOrigin(NSPoint(x: frame.maxX - appearance.panelSize.width - appearance.screenInset,
                                      y: frame.maxY - appearance.panelSize.height - appearance.screenInset))
@@ -125,21 +128,53 @@ struct MenuContent: View {
 }
 
 struct OverlayView: View {
-    let text: String
+    let content: OverlayContent
+    let icon: NSImage?
     let appearance: Appearance
 
     var body: some View {
-        HStack(spacing: appearance.spacing) {
-            Image(systemName: appearance.shieldIcon)
-                .font(.largeTitle)
-                .foregroundStyle(.gray)
-                .accessibilityHidden(true)
-            Text(text).font(.body).fixedSize(horizontal: false, vertical: true)
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: appearance.spacing) {
+                gameMark
+                Text(content.title)
+            }
+            if let detail = content.detail { Text(detail) }
+            if let progress = content.progress {
+                GeometryReader { box in
+                    Rectangle().fill(appearance.barFill).frame(width: box.size.width * progress)
+                }
+                .frame(height: 12)
+                .background(appearance.barTrack)
+                .overlay(Rectangle().stroke(appearance.frame, lineWidth: 2))
+            }
         }
+        .font(.custom("Silkscreen-Regular", size: 15))
+        .foregroundStyle(appearance.text)
         .padding(appearance.spacing)
-        .frame(width: appearance.panelSize.width, height: appearance.panelSize.height)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+        .frame(width: appearance.panelSize.width, height: appearance.panelSize.height, alignment: .leading)
+        .background(appearance.ground)
+        .overlay(Rectangle().stroke(appearance.frame, lineWidth: 4))
     }
+
+    @ViewBuilder private var gameMark: some View {
+        if let icon {
+            Image(nsImage: icon).resizable().interpolation(.none).frame(width: 32, height: 32)
+                .accessibilityHidden(true)
+        } else {
+            Image(systemName: appearance.shieldIcon).font(.title).foregroundStyle(.gray).accessibilityHidden(true)
+        }
+    }
+}
+
+@MainActor
+func gameIcon(_ key: String) -> NSImage? {
+    Bundle.module.url(forResource: key, withExtension: "png", subdirectory: "Resources").flatMap(NSImage.init(contentsOf:))
+}
+
+func registerPixelFont() {
+    guard let url = Bundle.module.url(forResource: "Silkscreen-Regular", withExtension: "ttf", subdirectory: "Resources")
+    else { return }
+    CTFontManagerRegisterFontsForURL(url as CFURL, .process, nil)
 }
 
 final class AppDelegate: NSObject, NSApplicationDelegate {

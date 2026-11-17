@@ -301,3 +301,17 @@ private actor SuspendedClient: StatusClient {
     #expect(store.lastSeen == nil)
     #expect(store.overlay == .hidden)
 }
+
+@Test func overlayContentForWarningAndBlock() {
+    let warning = overlayContent(for: .warning(target: "noita.exe", secondsLeft: 4))
+    #expect(warning?.title == "NOITA CLOSES IN 4")
+    #expect(warning?.detail == nil)
+    #expect(warning?.progress == 0.4)
+    #expect(warning?.gameKey == "noita")
+    let block = overlayContent(for: .blockCard(target: "noita.exe", reason: "daily budget exhausted"))
+    #expect(block?.title == "NOITA BLOCKED")
+    #expect(block?.detail == "DAILY BUDGET EXHAUSTED")
+    #expect(block?.progress == nil)
+    #expect(overlayContent(for: .hidden) == nil)
+    #expect(overlayContent(for: .warning(target: "Game", secondsLeft: 30))?.progress == 1)
+}
