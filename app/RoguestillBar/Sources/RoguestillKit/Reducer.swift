@@ -66,6 +66,7 @@ public func deriveOverlay(status: Status?, block: BlockNotice?, at now: Date) ->
 }
 
 public func formatDuration(_ seconds: UInt64) -> String {
-    if seconds >= 3600 { return String(format: "%llu:%02llu", seconds / 3600, seconds % 3600 / 60) }
-    return String(format: "%llu:%02llu", seconds / 60, seconds % 60)
+    if seconds >= 3600 { return String(format: "%lluh %02llum", seconds / 3600, seconds % 3600 / 60) }
+    if seconds >= 60 { return String(format: "%llum %02llus", seconds / 60, seconds % 60) }
+    return "\(seconds)s"
 }

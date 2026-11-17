@@ -44,7 +44,7 @@ struct RoguestillWidgetView: View {
                     Text(rule.name.uppercased()).font(.caption.bold())
                     Text("LEFT \(formatDuration(rule.remainingSecs))").font(.title3.monospacedDigit().bold())
                     bar(rule)
-                    Text("USED \(formatDuration(rule.usedSecs)) · RUNS \(rule.runsToday)").font(.caption2)
+                    Text("USED \(formatDuration(rule.usedSecs)), RUNS \(rule.runsToday)").font(.caption2)
                 }
             }
             if entry.snapshot == nil { Text("OPEN THE APP").font(.caption2) }

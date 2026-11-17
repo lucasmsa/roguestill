@@ -101,8 +101,9 @@ private func success(_ value: Status) throws -> Result<Data, any Error> {
 }
 
 @Test func durationsAndPaths() {
-    for (seconds, expected): (UInt64, String) in [(0, "0:00"), (9, "0:09"), (123, "2:03"),
-                                                (3599, "59:59"), (3600, "1:00"), (7260, "2:01")] {
+    for (seconds, expected): (UInt64, String) in [(0, "0s"), (9, "9s"), (60, "1m 00s"), (123, "2m 03s"),
+                                                (1251, "20m 51s"), (3599, "59m 59s"), (3600, "1h 00m"),
+                                                (5940, "1h 39m"), (7260, "2h 01m")] {
         #expect(formatDuration(seconds) == expected)
     }
     #expect(SocketClient.defaultPath(environment: [:], home: URL(fileURLWithPath: "/Users/test")) ==

@@ -51,14 +51,14 @@ struct RuleSection: View {
     var body: some View {
         Section(rule.name) {
             LabeledContent("Process") { Text(rule.target.process).foregroundStyle(.secondary) }
-            Stepper("Daily limit: \(rule.budget.limitMinutes) min", value: $rule.budget.limitMinutes, in: 1...1440, step: 5)
+            Stepper("Daily limit: \(formatDuration(UInt64(rule.budget.limitMinutes) * 60))", value: $rule.budget.limitMinutes, in: 1...1440, step: 5)
             Toggle("Limit runs per day", isOn: Binding(get: { rule.budget.limitRuns != nil },
                                                         set: { rule.budget.limitRuns = $0 ? 3 : nil }))
             if let runs = rule.budget.limitRuns {
                 Stepper("Runs per day: \(runs)", value: Binding(get: { runs }, set: { rule.budget.limitRuns = $0 }), in: 1...50)
             }
-            Stepper("Warning before closing: \(rule.action.warnSeconds) s", value: $rule.action.warnSeconds, in: 0...120, step: 5)
-            Stepper("Pause when idle after: \(rule.budget.idlePauseMinutes) min", value: $rule.budget.idlePauseMinutes, in: 0...120)
+            Stepper("Warning before closing: \(rule.action.warnSeconds)s", value: $rule.action.warnSeconds, in: 0...120, step: 5)
+            Stepper("Pause when idle after: \(formatDuration(UInt64(rule.budget.idlePauseMinutes) * 60))", value: $rule.budget.idlePauseMinutes, in: 0...120)
             Picker("Day resets at", selection: $rule.budget.resetHour) {
                 ForEach(0..<24, id: \.self) { Text(String(format: "%02d:00", $0)).tag($0) }
             }
