@@ -1,3 +1,4 @@
+import Foundation
 import RoguestillKit
 import ServiceManagement
 
@@ -13,7 +14,11 @@ func daemonStatus() -> AgentStatus {
 }
 
 func installDaemon() -> AgentStatus {
-    if daemonStatus() == .notRegistered { try? SMAppService.agent(plistName: daemonPlist).register() }
+    if daemonStatus() != .enabled {
+        do { try SMAppService.agent(plistName: daemonPlist).register() } catch {
+            FileHandle.standardError.write(Data("register: \(error)\n".utf8))
+        }
+    }
     return daemonStatus()
 }
 
