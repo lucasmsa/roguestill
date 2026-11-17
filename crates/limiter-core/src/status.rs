@@ -13,4 +13,6 @@ pub struct RuleStatus {
     pub runs_today: u64,
     pub degraded: bool,
     pub state: String,
+    #[serde(default)]
+    pub blocked_seq: u64,
 }

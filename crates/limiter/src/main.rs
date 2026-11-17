@@ -16,13 +16,14 @@ fn main() -> Result<(), Box<dyn Error>> {
             }
             for rule in status.rules {
                 println!(
-                    "{}: used {}s, remaining {}s, runs today {}, degraded: {}, state: {}",
+                    "{}: used {}s, remaining {}s, runs today {}, degraded: {}, state: {}, blocks: {}",
                     rule.name,
                     rule.used_secs,
                     rule.remaining_secs,
                     rule.runs_today,
                     rule.degraded,
-                    rule.state
+                    rule.state,
+                    rule.blocked_seq
                 );
             }
         }

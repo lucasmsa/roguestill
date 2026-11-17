@@ -5,6 +5,7 @@ use std::collections::HashMap;
 #[derive(Default)]
 pub struct Enforcement {
     notified: bool,
+    pub blocks: u64,
     pending: HashMap<u32, (u64, String, bool)>,
 }
 impl Enforcement {
@@ -38,6 +39,7 @@ impl Enforcement {
                     match blocker.terminate(process.pid) {
                         Ok(()) => {
                             eprintln!("SIGTERM sent to pid {}", process.pid);
+                            self.blocks += 1;
                             entry.insert((now, process.argv.clone(), false));
                         }
                         Err(error) => eprintln!("SIGTERM: {error}"),
@@ -143,6 +145,7 @@ mod tests {
             &mut blocker,
         );
         assert_eq!(blocker.0, vec![(42, "TERM"), (42, "KILL")]);
+        assert_eq!(enforcer.blocks, 1);
     }
     #[test]
     fn exited_or_reused_pid_is_not_killed() {

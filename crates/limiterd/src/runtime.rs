@@ -177,6 +177,7 @@ impl Runtime {
             remaining_secs: self.rule.budget.values().0.saturating_sub(used),
             runs_today,
             degraded,
+            blocked_seq: self.enforcement.blocks,
             state: serde_json::to_value(&state)?["kind"]
                 .as_str()
                 .unwrap()
