@@ -92,10 +92,10 @@ impl Engine {
             State::Ok {
                 remaining: limit - self.used,
             }
-        } else if !self.running && running {
-            self.warning_at = Some(now.saturating_sub(rule.action.warn_seconds));
-            State::Exceeded
         } else {
+            if !self.running && running {
+                self.warning_at = Some(now);
+            }
             let since = *self.warning_at.get_or_insert(now);
             let kill_in = rule
                 .action

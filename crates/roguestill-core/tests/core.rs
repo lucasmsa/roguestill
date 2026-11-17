@@ -108,11 +108,23 @@ fn warning_grace_and_relaunch() {
     engine.tick(&clock, &rule, false, None);
     assert_eq!(
         engine.tick(&clock, &rule, true, None).state,
+        State::Warning { kill_in: 10 }
+    );
+    clock.advance(10);
+    assert_eq!(
+        engine.tick(&clock, &rule, true, None).state,
         State::Exceeded
     );
     let mut restarted = Engine::new(&clock, &rule, 5400);
     assert_eq!(
         restarted.tick(&clock, &rule, true, None).state,
+        State::Warning { kill_in: 10 }
+    );
+    let mut instant = rule.clone();
+    instant.action.warn_seconds = 0;
+    let mut never_warned = Engine::new(&clock, &instant, 5400);
+    assert_eq!(
+        never_warned.tick(&clock, &instant, true, None).state,
         State::Exceeded
     );
 }
@@ -255,7 +267,10 @@ fn run_limit_ends_the_day_like_the_time_limit() {
     let mut idle = Engine::new(&clock, &rule, 0);
     idle.runs = 2;
     idle.tick(&clock, &rule, false, None);
-    assert_eq!(idle.tick(&clock, &rule, true, None).state, State::Exceeded);
+    assert_eq!(
+        idle.tick(&clock, &rule, true, None).state,
+        State::Warning { kill_in: 10 }
+    );
     rule.budget = Budget::DailyTime {
         limit_minutes: 90,
         reset_hour: 0,

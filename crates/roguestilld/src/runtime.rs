@@ -404,7 +404,7 @@ mod tests {
         config.rule[0].adapter = None;
         let db = Storage::open(Path::new(":memory:")).unwrap();
         let mut runtime = Runtime::new(config.rule[0].clone(), &clock, &db).unwrap();
-        let mut run = |argv: &str, runtime: &mut Runtime| {
+        let run = |argv: &str, runtime: &mut Runtime| {
             let processes = [Process {
                 pid: 7,
                 argv: argv.into(),

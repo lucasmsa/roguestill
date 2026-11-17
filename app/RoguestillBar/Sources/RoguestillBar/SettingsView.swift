@@ -61,7 +61,8 @@ struct MembersEditor: View {
             }
         }
         HStack {
-            TextField("Add to this group (for example Hades)", text: $draft)
+            TextField("Add to group", text: $draft, prompt: Text("Add to group, e.g. Hades"))
+                .labelsHidden()
                 .onSubmit(add)
             Menu("Running apps") {
                 ForEach(runningAppNames(), id: \.self) { name in Button(name) { rule.addMember(name) } }
@@ -96,7 +97,7 @@ struct RuleSection: View {
             if let runs = rule.budget.limitRuns {
                 Stepper("Runs per day: \(runs)", value: Binding(get: { runs }, set: { rule.budget.limitRuns = $0 }), in: 1...50)
             }
-            Stepper("Warning before closing: \(rule.action.warnSeconds)s", value: $rule.action.warnSeconds, in: 0...120, step: 5)
+            Stepper(rule.action.warnSeconds == 0 ? "Warning before closing: none" : "Warning before closing: \(rule.action.warnSeconds)s", value: $rule.action.warnSeconds, in: 0...120, step: 5)
             Stepper("Pause when idle after: \(formatDuration(UInt64(rule.budget.idlePauseMinutes) * 60))", value: $rule.budget.idlePauseMinutes, in: 0...120)
             Picker("Day resets at", selection: $rule.budget.resetHour) {
                 ForEach(0..<24, id: \.self) { Text(String(format: "%02d:00", $0)).tag($0) }
