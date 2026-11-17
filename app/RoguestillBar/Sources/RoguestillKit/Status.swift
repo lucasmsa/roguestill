@@ -20,6 +20,7 @@ public struct RuleStatus: Codable, Equatable, Sendable {
     public let state: String
     public let blockedSeq: UInt64
     public let limitRuns: UInt64?
+    public let killInSecs: UInt64?
 
     enum CodingKeys: String, CodingKey {
         case name, target, degraded, state
@@ -28,10 +29,11 @@ public struct RuleStatus: Codable, Equatable, Sendable {
         case runsToday = "runs_today"
         case blockedSeq = "blocked_seq"
         case limitRuns = "limit_runs"
+        case killInSecs = "kill_in_secs"
     }
 
     public init(name: String, target: String, usedSecs: UInt64, remainingSecs: UInt64,
-                runsToday: UInt64, degraded: Bool, state: String, blockedSeq: UInt64 = 0, limitRuns: UInt64? = nil) {
+                runsToday: UInt64, degraded: Bool, state: String, blockedSeq: UInt64 = 0, limitRuns: UInt64? = nil, killInSecs: UInt64? = nil) {
         self.name = name
         self.target = target
         self.usedSecs = usedSecs
@@ -41,6 +43,7 @@ public struct RuleStatus: Codable, Equatable, Sendable {
         self.state = state
         self.blockedSeq = blockedSeq
         self.limitRuns = limitRuns
+        self.killInSecs = killInSecs
     }
 
     public init(from decoder: any Decoder) throws {
@@ -54,6 +57,7 @@ public struct RuleStatus: Codable, Equatable, Sendable {
         state = try c.decode(String.self, forKey: .state)
         blockedSeq = try c.decodeIfPresent(UInt64.self, forKey: .blockedSeq) ?? 0
         limitRuns = try c.decodeIfPresent(UInt64.self, forKey: .limitRuns)
+        killInSecs = try c.decodeIfPresent(UInt64.self, forKey: .killInSecs)
     }
 }
 

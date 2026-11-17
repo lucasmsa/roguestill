@@ -60,7 +60,7 @@ public func deriveOverlay(status: Status?, block: BlockNotice?, at now: Date) ->
         return .blockCard(target: block.target, reason: "daily budget exhausted")
     }
     if let rule = status?.rules.first(where: { $0.state == "warning" }) {
-        return .warning(target: rule.target, secondsLeft: rule.remainingSecs)
+        return .warning(target: rule.target, secondsLeft: rule.killInSecs ?? 0)
     }
     return .hidden
 }

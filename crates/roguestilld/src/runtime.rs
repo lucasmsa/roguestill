@@ -6,7 +6,7 @@ use crate::{
     Result,
 };
 use roguestill_core::{
-    budget::{day, Clock, Engine},
+    budget::{day, Clock, Engine, State},
     noita::{diff, Event, Snapshot},
     rules::{Config, Rule},
     status::RuleStatus,
@@ -194,6 +194,10 @@ impl Runtime {
             degraded,
             blocked_seq: self.enforcement.blocks,
             limit_runs: self.rule.budget.run_limit(),
+            kill_in_secs: match state {
+                State::Warning { kill_in } => Some(kill_in),
+                _ => None,
+            },
             state: serde_json::to_value(&state)?["kind"]
                 .as_str()
                 .unwrap()
@@ -320,5 +324,7 @@ mod tests {
         clock.0.set(102);
         let after = poll(&mut runtime, &clock, &db, &config);
         assert_eq!((after.state.as_str(), after.runs_today), ("warning", 1));
+        assert_eq!(after.kill_in_secs, Some(10));
+        assert_eq!(before.kill_in_secs, None);
     }
 }

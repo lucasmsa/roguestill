@@ -17,4 +17,6 @@ pub struct RuleStatus {
     pub blocked_seq: u64,
     #[serde(default)]
     pub limit_runs: Option<u64>,
+    #[serde(default)]
+    pub kill_in_secs: Option<u64>,
 }

@@ -6,8 +6,9 @@ import Testing
 private let date = Date(timeIntervalSince1970: 1_000)
 
 private func rule(_ sequence: UInt64 = 0, name: String = "game", state: String = "ok") -> RuleStatus {
-    RuleStatus(name: name, target: "game.exe", usedSecs: 123, remainingSecs: 9,
-               runsToday: 2, degraded: true, state: state, blockedSeq: sequence)
+    RuleStatus(name: name, target: "game.exe", usedSecs: 123, remainingSecs: 3250,
+               runsToday: 2, degraded: true, state: state, blockedSeq: sequence,
+               killInSecs: state == "warning" ? 9 : nil)
 }
 
 private func status(_ sequence: UInt64 = 0, state: String = "ok") -> Status {
@@ -19,7 +20,7 @@ private func success(_ value: Status) throws -> Result<Data, any Error> {
 }
 
 @Test func decodingAndEncoding() throws {
-    let json = #"{"v":1,"rules":[{"name":"game","target":"game.exe","used_secs":123,"remaining_secs":9,"runs_today":2,"degraded":true,"state":"ok"}]}"#
+    let json = #"{"v":1,"rules":[{"name":"game","target":"game.exe","used_secs":123,"remaining_secs":3250,"runs_today":2,"degraded":true,"state":"ok"}]}"#
     let decoded = try JSONDecoder().decode(Status.self, from: Data(json.utf8))
     #expect(decoded == status())
     let encoded = try JSONEncoder().encode(status(42))
@@ -28,7 +29,7 @@ private func success(_ value: Status) throws -> Result<Data, any Error> {
     let rules = try #require(object["rules"] as? [[String: Any]])
     #expect(rules[0]["blocked_seq"] as? Int == 42)
     #expect(rules[0]["used_secs"] as? Int == 123)
-    #expect(rules[0]["remaining_secs"] as? Int == 9)
+    #expect(rules[0]["remaining_secs"] as? Int == 3250)
     #expect(rules[0]["runs_today"] as? Int == 2)
     let wide = RuleStatus(name: "wide", target: "wide", usedSecs: .max, remainingSecs: .max,
                           runsToday: .max, degraded: false, state: "ok", blockedSeq: .max)
