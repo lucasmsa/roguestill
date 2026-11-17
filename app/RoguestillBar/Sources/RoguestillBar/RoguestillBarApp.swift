@@ -191,18 +191,18 @@ struct OverlayView: View {
 }
 
 #if SWIFT_PACKAGE
-let resourceBundle = Bundle.module
+let appResources = Bundle.module
 #else
-let resourceBundle = Bundle.main
+let appResources = Bundle.main
 #endif
 
 @MainActor
 func gameIcon(_ key: String) -> NSImage? {
-    resourceBundle.url(forResource: key, withExtension: "png", subdirectory: "Resources").flatMap(NSImage.init(contentsOf:))
+    appResources.url(forResource: key, withExtension: "png", subdirectory: "Resources").flatMap(NSImage.init(contentsOf:))
 }
 
 func registerPixelFont() {
-    guard let url = resourceBundle.url(forResource: "Silkscreen-Regular", withExtension: "ttf", subdirectory: "Resources")
+    guard let url = appResources.url(forResource: "Silkscreen-Regular", withExtension: "ttf", subdirectory: "Resources")
     else { return }
     CTFontManagerRegisterFontsForURL(url as CFURL, .process, nil)
 }
