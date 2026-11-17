@@ -4,7 +4,7 @@ Date: 2026-11-17
 
 ## Context
 
-The limiter exists because stopping on its own fails. Friction screens (a wait timer, a typed reason) are easy to click through when tired or hooked, so they do not hold at the moment they matter.
+Roguestill exists because stopping on its own fails. Friction screens (a wait timer, a typed reason) are easy to click through when tired or hooked, so they do not hold at the moment they matter.
 
 ## Decision
 
