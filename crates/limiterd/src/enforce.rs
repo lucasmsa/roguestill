@@ -37,6 +37,7 @@ impl Enforcement {
                 {
                     match blocker.terminate(process.pid) {
                         Ok(()) => {
+                            eprintln!("SIGTERM sent to pid {}", process.pid);
                             entry.insert((now, process.argv.clone(), false));
                         }
                         Err(error) => eprintln!("SIGTERM: {error}"),
@@ -58,7 +59,10 @@ impl Enforcement {
         for (&pid, (sent, _, killed)) in &mut self.pending {
             if !*killed && now.saturating_sub(*sent) >= 3 {
                 match blocker.kill(pid) {
-                    Ok(()) => *killed = true,
+                    Ok(()) => {
+                        eprintln!("SIGKILL sent to pid {pid}");
+                        *killed = true;
+                    }
                     Err(error) => {
                         eprintln!("SIGKILL: {error}");
                         *sent = now;
