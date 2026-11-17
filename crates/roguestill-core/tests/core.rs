@@ -271,3 +271,19 @@ fn run_limit_ends_the_day_like_the_time_limit() {
     )
     .is_err());
 }
+
+#[test]
+fn target_accepts_one_process_or_a_group() {
+    let legacy = rule();
+    assert_eq!(legacy.target.processes, vec!["noita.exe".to_string()]);
+    let text = include_str!("../../../config/rules.example.toml").replace(
+        "process = \"noita.exe\"",
+        "processes = [\"Noita\", \"Hades\"]",
+    );
+    let group = parse(&text).unwrap();
+    assert_eq!(group.rule[0].target.processes, ["Noita", "Hades"]);
+    let empty = text.replace("[\"Noita\", \"Hades\"]", "[]");
+    assert!(parse(&empty).is_err());
+    let blank = text.replace("\"Hades\"", "\" \"");
+    assert!(parse(&blank).is_err());
+}

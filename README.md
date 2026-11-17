@@ -2,7 +2,7 @@
 
 Caps how long you play roguelikes per day. A background daemon watches the game process and its save files, warns for 10 seconds, then closes the game when the daily budget is spent. A macOS menu bar app shows the countdown over the game and a WidgetKit widget shows time left. The name plays on "hold still".
 
-Currently supports Noita (run through CrossOver on macOS). Design decisions are in `docs/adr`.
+A game can be a group: several apps (for example Reddit, X and Instagram) share one daily time and run budget. Currently the Noita run counter works for Noita (run through CrossOver on macOS); any other app is limited by time. Design decisions are in `docs/adr`.
 
 ## Layout
 

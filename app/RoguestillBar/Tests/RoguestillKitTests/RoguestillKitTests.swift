@@ -361,7 +361,7 @@ private actor SuspendedClient: StatusClient {
     #expect(!agentNeedsSettings(.enabled))
 }
 
-private let sampleConfig = #"{"noita_save_path":"~/save00","rule":[{"name":"Noita","target":{"process":"noita.exe"},"adapter":"noita","budget":{"kind":"daily_time","limit_minutes":90,"reset_hour":0,"idle_pause_minutes":5},"action":{"warn_seconds":10,"kill":true,"relaunch":"kill_again"}}]}"#
+private let sampleConfig = #"{"noita_save_path":"~/save00","rule":[{"name":"Noita","target":{"processes":["noita.exe"]},"adapter":"noita","budget":{"kind":"daily_time","limit_minutes":90,"reset_hour":0,"idle_pause_minutes":5},"action":{"warn_seconds":10,"kill":true,"relaunch":"kill_again"}}]}"#
 
 @Test func rulesConfigRoundTrip() throws {
     var config = try JSONDecoder().decode(RulesConfig.self, from: Data(sampleConfig.utf8))
@@ -385,6 +385,21 @@ private let sampleConfig = #"{"noita_save_path":"~/save00","rule":[{"name":"Noit
     let object = try #require(JSONSerialization.jsonObject(with: JSONEncoder().encode(config)) as? [String: Any])
     #expect(((object["rule"] as? [[String: Any]])?.first)?["lock_changes"] as? Bool == true)
     #expect(!GameRule.new(name: "A", process: "a.exe").lockChanges)
+}
+
+@Test func groupMembersEditing() throws {
+    var rule = GameRule.new(name: "Social", process: "Reddit")
+    rule.addMember(" X ")
+    rule.addMember("reddit")
+    rule.addMember("")
+    #expect(rule.target.processes == ["Reddit", "X"])
+    rule.removeMember("Reddit")
+    rule.removeMember("X")
+    #expect(rule.target.processes == ["X"])
+    let config = try JSONDecoder().decode(RulesConfig.self, from: Data(sampleConfig.utf8))
+    let object = try #require(JSONSerialization.jsonObject(with: JSONEncoder().encode(config)) as? [String: Any])
+    let target = try #require(((object["rule"] as? [[String: Any]])?.first)?["target"] as? [String: Any])
+    #expect(target["processes"] as? [String] == ["noita.exe"])
 }
 
 @Test func newGameRuleHasSaneDefaults() {

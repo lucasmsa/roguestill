@@ -12,7 +12,7 @@ public struct RulesConfig: Codable, Equatable, Sendable {
 
 public struct GameRule: Codable, Equatable, Sendable, Identifiable {
     public struct Target: Codable, Equatable, Sendable {
-        public var process: String
+        public var processes: [String]
     }
 
     public struct Budget: Codable, Equatable, Sendable {
@@ -74,8 +74,20 @@ public struct GameRule: Codable, Equatable, Sendable, Identifiable {
         self.lockChanges = lockChanges
     }
 
+    public mutating func addMember(_ name: String) {
+        let trimmed = name.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty,
+              !target.processes.contains(where: { $0.caseInsensitiveCompare(trimmed) == .orderedSame }) else { return }
+        target.processes.append(trimmed)
+    }
+
+    public mutating func removeMember(_ name: String) {
+        guard target.processes.count > 1 else { return }
+        target.processes.removeAll { $0 == name }
+    }
+
     public static func new(name: String, process: String) -> GameRule {
-        GameRule(name: name, target: Target(process: process), adapter: nil,
+        GameRule(name: name, target: Target(processes: [process]), adapter: nil,
                  budget: Budget(kind: "daily_time", limitMinutes: 60, resetHour: 0, idlePauseMinutes: 5, limitRuns: nil),
                  action: Action(warnSeconds: 10, kill: true, relaunch: "kill_again"))
     }

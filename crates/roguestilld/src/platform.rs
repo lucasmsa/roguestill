@@ -48,12 +48,25 @@ pub fn parse_processes(output: &str) -> Vec<Process> {
         })
         .collect()
 }
+fn stem(name: &str) -> String {
+    let lower = name.trim().to_ascii_lowercase();
+    for suffix in [".exe", ".app"] {
+        if let Some(stripped) = lower.strip_suffix(suffix) {
+            return stripped.to_string();
+        }
+    }
+    lower
+}
 pub fn matches(process: &Process, target: &str) -> bool {
+    let wanted = stem(target);
     process.argv.split([' ', '\t', '"', '\'']).any(|part| {
         part.rsplit(['/', '\\'])
             .next()
-            .is_some_and(|name| name.eq_ignore_ascii_case(target))
+            .is_some_and(|name| !wanted.is_empty() && stem(name) == wanted)
     })
+}
+pub fn matches_any(process: &Process, targets: &[String]) -> bool {
+    targets.iter().any(|target| matches(process, target))
 }
 impl Notifier for MacOs {
     fn notify(&mut self, target: &str, seconds: u64) -> io::Result<()> {
@@ -97,5 +110,27 @@ mod tests {
         assert!(matches(&processes[0], "noita.exe"));
         assert!(!matches(&processes[1], "noita.exe"));
         assert!(matches(&processes[2], "noita.exe"));
+    }
+}
+
+#[cfg(test)]
+mod match_tests {
+    use super::*;
+    fn process(argv: &str) -> Process {
+        Process {
+            pid: 1,
+            argv: argv.into(),
+        }
+    }
+    #[test]
+    fn friendly_names_match_executables() {
+        let wine = process("C:\\Program Files\\Noita\\noita.exe CX_GRAPHICS=1");
+        assert!(matches(&wine, "noita.exe"));
+        assert!(matches(&wine, "Noita"));
+        assert!(!matches(&wine, "Noit"));
+        let app = process("/Applications/Reddit.app/Contents/MacOS/Reddit");
+        assert!(matches(&app, "reddit"));
+        assert!(matches(&app, "Reddit.app"));
+        assert!(!matches(&app, "Redd"));
     }
 }

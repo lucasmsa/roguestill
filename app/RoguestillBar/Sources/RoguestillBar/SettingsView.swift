@@ -1,3 +1,4 @@
+import AppKit
 import RoguestillKit
 import SwiftUI
 
@@ -14,9 +15,9 @@ struct SettingsView: View {
                     RuleSection(rule: ruleBinding(index), canRemove: (model.config?.rule.count ?? 0) > 1,
                                 remove: { model.remove(index) })
                 }
-                Section("Add a game") {
-                    TextField("Name", text: $newName)
-                    TextField("Process name (for example Hades.exe)", text: $newProcess)
+                Section("Add a game or group") {
+                    TextField("Group or game name (for example Social media)", text: $newName)
+                    TextField("First game or app (for example Reddit)", text: $newProcess)
                     Button("Add") {
                         model.addGame(name: newName, process: newProcess)
                         newName = ""
@@ -43,6 +44,44 @@ struct SettingsView: View {
     }
 }
 
+struct MembersEditor: View {
+    @Binding var rule: GameRule
+    @State private var draft = ""
+
+    var body: some View {
+        ForEach(rule.target.processes, id: \.self) { member in
+            LabeledContent(rule.target.processes.count > 1 ? "Member" : "Game") {
+                HStack {
+                    Text(member).foregroundStyle(.secondary)
+                    if rule.target.processes.count > 1 {
+                        Button("Remove", systemImage: "minus.circle") { rule.removeMember(member) }
+                            .labelStyle(.iconOnly).buttonStyle(.borderless)
+                    }
+                }
+            }
+        }
+        HStack {
+            TextField("Add to this group (for example Hades)", text: $draft)
+                .onSubmit(add)
+            Menu("Running apps") {
+                ForEach(runningAppNames(), id: \.self) { name in Button(name) { rule.addMember(name) } }
+            }
+            .fixedSize()
+            Button("Add", action: add).disabled(draft.trimmingCharacters(in: .whitespaces).isEmpty)
+        }
+    }
+
+    private func add() {
+        rule.addMember(draft)
+        draft = ""
+    }
+}
+
+func runningAppNames() -> [String] {
+    Set(NSWorkspace.shared.runningApplications.filter { $0.activationPolicy == .regular }.compactMap(\.localizedName))
+        .sorted { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending }
+}
+
 struct RuleSection: View {
     @Binding var rule: GameRule
     let canRemove: Bool
@@ -50,7 +89,7 @@ struct RuleSection: View {
 
     var body: some View {
         Section(rule.name) {
-            LabeledContent("Process") { Text(rule.target.process).foregroundStyle(.secondary) }
+            MembersEditor(rule: $rule)
             Stepper("Daily limit: \(formatDuration(UInt64(rule.budget.limitMinutes) * 60))", value: $rule.budget.limitMinutes, in: 1...1440, step: 5)
             Toggle("Limit runs per day", isOn: Binding(get: { rule.budget.limitRuns != nil },
                                                         set: { rule.budget.limitRuns = $0 ? 3 : nil }))

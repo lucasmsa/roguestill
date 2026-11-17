@@ -24,7 +24,21 @@ pub struct Rule {
 #[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct Target {
-    pub process: String,
+    #[serde(alias = "process", deserialize_with = "one_or_many")]
+    pub processes: Vec<String>,
+}
+
+fn one_or_many<'de, D: serde::Deserializer<'de>>(deserializer: D) -> Result<Vec<String>, D::Error> {
+    #[derive(Deserialize)]
+    #[serde(untagged)]
+    enum Names {
+        One(String),
+        Many(Vec<String>),
+    }
+    Ok(match Names::deserialize(deserializer)? {
+        Names::One(name) => vec![name],
+        Names::Many(names) => names,
+    })
 }
 
 #[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
@@ -99,7 +113,8 @@ pub fn parse(input: &str) -> Result<Config, String> {
             limit_runs,
         } = rule.budget;
         if rule.name.trim().is_empty()
-            || rule.target.process.trim().is_empty()
+            || rule.target.processes.is_empty()
+            || rule.target.processes.iter().any(|p| p.trim().is_empty())
             || !names.insert(&rule.name)
             || reset_hour > 23
             || limit_runs == Some(0)

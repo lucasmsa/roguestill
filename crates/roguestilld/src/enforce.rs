@@ -24,7 +24,7 @@ impl Enforcement {
         }
         if let State::Warning { kill_in } = state {
             if !self.notified {
-                match notifier.notify(&rule.target.process, *kill_in) {
+                match notifier.notify(&rule.name, *kill_in) {
                     Ok(()) => self.notified = true,
                     Err(error) => eprintln!("notification: {error}"),
                 }

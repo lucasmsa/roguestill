@@ -74,7 +74,7 @@ impl Runtime {
             .find(|r| r.name == self.rule.name && **r != self.rule)
             .filter(|_| !self.rule.lock_changes)
         {
-            if self.rule.target.process != next.target.process {
+            if self.rule.target.processes != next.target.processes {
                 self.session = None;
                 self.snapshot = None;
             }
@@ -83,7 +83,7 @@ impl Runtime {
         }
         let mut matched: Vec<_> = processes
             .iter()
-            .filter(|p| platform::matches(p, &self.rule.target.process))
+            .filter(|p| platform::matches_any(p, &self.rule.target.processes))
             .cloned()
             .collect();
         let mut running = !matched.is_empty();
@@ -166,12 +166,12 @@ impl Runtime {
         }
         let state = if tick.previous_day != self.engine.day {
             if let Some(next) = config.rule.iter().find(|r| r.name == self.rule.name) {
-                if self.rule.target.process != next.target.process {
+                if self.rule.target.processes != next.target.processes {
                     self.session = None;
                     self.snapshot = None;
                     matched = processes
                         .iter()
-                        .filter(|p| platform::matches(p, &next.target.process))
+                        .filter(|p| platform::matches_any(p, &next.target.processes))
                         .cloned()
                         .collect();
                     running = !matched.is_empty();
@@ -196,7 +196,7 @@ impl Runtime {
         let (used, runs_today) = db.totals(&self.rule.name, self.engine.day)?;
         Ok(Some(RuleStatus {
             name: self.rule.name.clone(),
-            target: self.rule.target.process.clone(),
+            target: self.rule.target.processes[0].clone(),
             used_secs: used,
             remaining_secs: self.rule.budget.values().0.saturating_sub(used),
             runs_today,
@@ -395,5 +395,44 @@ mod tests {
             7200
         );
         assert!(!runtime.rule.lock_changes);
+    }
+    #[test]
+    fn group_members_share_one_budget() {
+        let clock = FakeClock(Cell::new(100));
+        let mut config = config();
+        config.rule[0].target.processes = vec!["Noita".into(), "Hades.exe".into()];
+        config.rule[0].adapter = None;
+        let db = Storage::open(Path::new(":memory:")).unwrap();
+        let mut runtime = Runtime::new(config.rule[0].clone(), &clock, &db).unwrap();
+        let mut run = |argv: &str, runtime: &mut Runtime| {
+            let processes = [Process {
+                pid: 7,
+                argv: argv.into(),
+            }];
+            runtime
+                .poll(
+                    Poll {
+                        clock: &clock,
+                        db: &db,
+                        config: &config,
+                        save: Path::new("/nonexistent"),
+                        processes: &processes,
+                        wall: clock.0.get() as i64,
+                    },
+                    &mut FakePlatform::default(),
+                    &mut FakePlatform::default(),
+                )
+                .unwrap()
+                .unwrap()
+        };
+        run("wine C:\\Games\\noita.exe", &mut runtime);
+        clock.0.set(160);
+        assert_eq!(run("wine C:\\Games\\noita.exe", &mut runtime).used_secs, 60);
+        clock.0.set(200);
+        assert_eq!(run("/Games/Hades.exe", &mut runtime).used_secs, 100);
+        clock.0.set(230);
+        assert_eq!(run("/usr/bin/other", &mut runtime).used_secs, 130);
+        clock.0.set(300);
+        assert_eq!(run("/usr/bin/other", &mut runtime).used_secs, 130);
     }
 }

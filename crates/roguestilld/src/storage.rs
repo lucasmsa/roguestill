@@ -60,7 +60,7 @@ impl Storage {
                 params![now, active, id],
             )?;
         } else {
-            self.0.execute("INSERT INTO usage(rule,target,day,start,end,active_secs) VALUES (?1,?2,?3,?4,?5,?6)", params![rule.name, rule.target.process, day, now - active as i64, now, active])?;
+            self.0.execute("INSERT INTO usage(rule,target,day,start,end,active_secs) VALUES (?1,?2,?3,?4,?5,?6)", params![rule.name, rule.target.processes.join(", "), day, now - active as i64, now, active])?;
             *id = Some(self.0.last_insert_rowid());
         }
         Ok(())
@@ -73,7 +73,7 @@ impl Storage {
         run: (&str, f64, bool),
     ) -> rusqlite::Result<()> {
         let (run, seconds, counted) = run;
-        self.0.execute("INSERT OR IGNORE INTO usage(rule,target,day,start,end,active_secs,run_id,counted) VALUES (?1,?2,?3,?4,?5,?6,?7,?8)", params![rule.name, rule.target.process, day, now - seconds as i64, now, seconds as u64, run, counted])?;
+        self.0.execute("INSERT OR IGNORE INTO usage(rule,target,day,start,end,active_secs,run_id,counted) VALUES (?1,?2,?3,?4,?5,?6,?7,?8)", params![rule.name, rule.target.processes.join(", "), day, now - seconds as i64, now, seconds as u64, run, counted])?;
         Ok(())
     }
     pub fn log_config(&self, now: i64, config: &str) -> rusqlite::Result<()> {
