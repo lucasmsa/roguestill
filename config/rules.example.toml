@@ -1,0 +1,16 @@
+noita_save_path = "~/Library/Application Support/CrossOver/Bottles/Steam/drive_c/users/crossover/AppData/LocalLow/Nolla_Games_Noita/save00"
+
+[[rule]]
+name = "Noita"
+adapter = "noita"
+[rule.target]
+process = "noita.exe"
+[rule.budget]
+kind = "daily_time"
+limit_minutes = 90
+reset_hour = 0
+idle_pause_minutes = 5
+[rule.action]
+warn_seconds = 10
+kill = true
+relaunch = "kill_again"

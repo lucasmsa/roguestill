@@ -1,0 +1,9 @@
+[workspace]
+members = ["crates/limiter-core", "crates/limiterd", "crates/limiter"]
+resolver = "2"
+
+[workspace.dependencies]
+limiter-core = { path = "crates/limiter-core" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+toml = "0.8"
