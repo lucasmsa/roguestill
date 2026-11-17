@@ -11,7 +11,7 @@ use roguestill_core::{
     rules::{Config, Rule},
     status::RuleStatus,
 };
-use std::path::Path;
+use std::{path::Path, time::Duration};
 
 pub struct Poll<'a, C> {
     pub clock: &'a C,
@@ -21,6 +21,14 @@ pub struct Poll<'a, C> {
     pub processes: &'a [Process],
     pub wall: i64,
 }
+pub fn poll_interval(statuses: &[RuleStatus]) -> Duration {
+    if statuses.iter().any(|s| s.state == "warning") {
+        Duration::from_secs(1)
+    } else {
+        Duration::from_secs(2)
+    }
+}
+
 pub struct Runtime {
     pub rule: Rule,
     engine: Engine,
@@ -326,5 +334,26 @@ mod tests {
         assert_eq!((after.state.as_str(), after.runs_today), ("warning", 1));
         assert_eq!(after.kill_in_secs, Some(10));
         assert_eq!(before.kill_in_secs, None);
+    }
+    #[test]
+    fn polls_every_second_only_during_a_warning() {
+        let clock = FakeClock(Cell::new(100));
+        let mut config = config();
+        config.rule[0].budget = rules::Budget::DailyTime {
+            limit_minutes: 90,
+            reset_hour: 0,
+            idle_pause_minutes: 5,
+            limit_runs: Some(1),
+        };
+        let db = Storage::open(Path::new(":memory:")).unwrap();
+        let mut runtime = Runtime::new(config.rule[0].clone(), &clock, &db).unwrap();
+        let calm = poll(&mut runtime, &clock, &db, &config);
+        assert_eq!(poll_interval(&[calm]), Duration::from_secs(2));
+        db.run(&runtime.rule, 0, 100, ("start", 600.0, true))
+            .unwrap();
+        clock.0.set(102);
+        let warning = poll(&mut runtime, &clock, &db, &config);
+        assert_eq!(poll_interval(&[warning]), Duration::from_secs(1));
+        assert_eq!(poll_interval(&[]), Duration::from_secs(2));
     }
 }

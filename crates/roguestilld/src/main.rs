@@ -162,12 +162,13 @@ fn main() -> Result<()> {
                 runtimes.push(Runtime::new(rule.clone(), &clock, &db)?);
             }
         }
+        let period = runtime::poll_interval(&statuses);
         *status.lock().unwrap() = Status {
             v: 1,
             rules: statuses,
         };
         loop {
-            let remaining = Duration::from_secs(2).saturating_sub(started.elapsed());
+            let remaining = period.saturating_sub(started.elapsed());
             if remaining.is_zero() {
                 break;
             }
