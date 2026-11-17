@@ -378,6 +378,15 @@ private let sampleConfig = #"{"noita_save_path":"~/save00","rule":[{"name":"Noit
     #expect(try JSONDecoder().decode(RulesConfig.self, from: JSONEncoder().encode(config)) == config)
 }
 
+@Test func lockChangesRoundTrips() throws {
+    var config = try JSONDecoder().decode(RulesConfig.self, from: Data(sampleConfig.utf8))
+    #expect(config.rule[0].lockChanges == false)
+    config.rule[0].lockChanges = true
+    let object = try #require(JSONSerialization.jsonObject(with: JSONEncoder().encode(config)) as? [String: Any])
+    #expect(((object["rule"] as? [[String: Any]])?.first)?["lock_changes"] as? Bool == true)
+    #expect(!GameRule.new(name: "A", process: "a.exe").lockChanges)
+}
+
 @Test func newGameRuleHasSaneDefaults() {
     let rule = GameRule.new(name: "Hades", process: "Hades.exe")
     #expect(rule.budget.limitMinutes == 60 && rule.action.warnSeconds == 10 && rule.action.kill)

@@ -63,6 +63,11 @@ struct RuleSection: View {
                 ForEach(0..<24, id: \.self) { Text(String(format: "%02d:00", $0)).tag($0) }
             }
             Toggle("Close the game when time is up", isOn: $rule.action.kill)
+            Toggle("Lock limits for the day", isOn: $rule.lockChanges)
+            if rule.lockChanges {
+                Text("Edits to this game, including turning the lock off, take effect at the next day reset.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
             if canRemove { Button("Remove \(rule.name)", role: .destructive, action: remove) }
         }
     }

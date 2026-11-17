@@ -47,7 +47,32 @@ public struct GameRule: Codable, Equatable, Sendable, Identifiable {
     public var adapter: String?
     public var budget: Budget
     public var action: Action
+    public var lockChanges: Bool
     public var id: String { name }
+
+    enum CodingKeys: String, CodingKey {
+        case name, target, adapter, budget, action
+        case lockChanges = "lock_changes"
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        name = try c.decode(String.self, forKey: .name)
+        target = try c.decode(Target.self, forKey: .target)
+        adapter = try c.decodeIfPresent(String.self, forKey: .adapter)
+        budget = try c.decode(Budget.self, forKey: .budget)
+        action = try c.decode(Action.self, forKey: .action)
+        lockChanges = try c.decodeIfPresent(Bool.self, forKey: .lockChanges) ?? false
+    }
+
+    public init(name: String, target: Target, adapter: String?, budget: Budget, action: Action, lockChanges: Bool = false) {
+        self.name = name
+        self.target = target
+        self.adapter = adapter
+        self.budget = budget
+        self.action = action
+        self.lockChanges = lockChanges
+    }
 
     public static func new(name: String, process: String) -> GameRule {
         GameRule(name: name, target: Target(process: process), adapter: nil,

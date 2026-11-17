@@ -17,6 +17,8 @@ pub struct Rule {
     pub adapter: Option<Adapter>,
     pub budget: Budget,
     pub action: Action,
+    #[serde(default)]
+    pub lock_changes: bool,
 }
 
 #[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]

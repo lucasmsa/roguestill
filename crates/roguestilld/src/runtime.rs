@@ -72,6 +72,7 @@ impl Runtime {
             .rule
             .iter()
             .find(|r| r.name == self.rule.name && **r != self.rule)
+            .filter(|_| !self.rule.lock_changes)
         {
             if self.rule.target.process != next.target.process {
                 self.session = None;
@@ -355,5 +356,44 @@ mod tests {
         let warning = poll(&mut runtime, &clock, &db, &config);
         assert_eq!(poll_interval(&[warning]), Duration::from_secs(1));
         assert_eq!(poll_interval(&[]), Duration::from_secs(2));
+    }
+    fn edit_limit(config: &mut Config, minutes: u64) {
+        config.rule[0].budget = rules::Budget::DailyTime {
+            limit_minutes: minutes,
+            reset_hour: 0,
+            idle_pause_minutes: 5,
+            limit_runs: None,
+        };
+    }
+    #[test]
+    fn locked_rule_ignores_edits_until_reset_and_unlocking_waits_too() {
+        let clock = FakeClock(Cell::new(86390));
+        let mut config = config();
+        let db = Storage::open(Path::new(":memory:")).unwrap();
+        let mut runtime = Runtime::new(config.rule[0].clone(), &clock, &db).unwrap();
+        poll(&mut runtime, &clock, &db, &config);
+        config.rule[0].lock_changes = true;
+        clock.0.set(86392);
+        poll(&mut runtime, &clock, &db, &config);
+        assert!(runtime.rule.lock_changes);
+        edit_limit(&mut config, 120);
+        clock.0.set(86395);
+        assert_eq!(
+            poll(&mut runtime, &clock, &db, &config).remaining_secs,
+            5395
+        );
+        config.rule[0].lock_changes = false;
+        clock.0.set(86396);
+        assert_eq!(
+            poll(&mut runtime, &clock, &db, &config).remaining_secs,
+            5394
+        );
+        assert!(runtime.rule.lock_changes);
+        clock.0.set(86400);
+        assert_eq!(
+            poll(&mut runtime, &clock, &db, &config).remaining_secs,
+            7200
+        );
+        assert!(!runtime.rule.lock_changes);
     }
 }
