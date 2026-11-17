@@ -1,0 +1,52 @@
+name: RunLimiter
+options:
+  bundleIdPrefix: com.lucasmsa
+  deploymentTarget:
+    macOS: "14.0"
+packages:
+  RunLimiterKit:
+    path: .
+settings:
+  base:
+    DEVELOPMENT_TEAM: 6S85XSVS8M
+    SWIFT_VERSION: "6.0"
+    CODE_SIGN_STYLE: Automatic
+targets:
+  RunLimiter:
+    type: application
+    platform: macOS
+    sources:
+      - path: Sources/RunLimiterBar
+        excludes: ["Resources"]
+      - path: Sources/RunLimiterBar/Resources
+        type: folder
+    dependencies:
+      - package: RunLimiterKit
+      - target: RunLimiterWidget
+    entitlements:
+      path: RunLimiter.entitlements
+    info:
+      path: Info.plist
+      properties:
+        LSUIElement: true
+        CFBundleName: Run Limiter
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.lucasmsa.run-limiter
+  RunLimiterWidget:
+    type: app-extension
+    platform: macOS
+    sources: [Widget]
+    dependencies:
+      - package: RunLimiterKit
+    entitlements:
+      path: Widget/RunLimiterWidget.entitlements
+    info:
+      path: Widget/Info.plist
+      properties:
+        CFBundleName: Run Limiter Widget
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.lucasmsa.run-limiter.widget

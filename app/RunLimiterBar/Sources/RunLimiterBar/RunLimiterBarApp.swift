@@ -3,6 +3,7 @@ import CoreText
 import Combine
 import RunLimiterKit
 import SwiftUI
+import WidgetKit
 
 struct Appearance {
     let normalIcon = "hourglass"
@@ -24,6 +25,8 @@ final class AppModel: ObservableObject {
     let appearance: Appearance
     private let panel: NSPanel
     private var subscriptions: Set<AnyCancellable> = []
+    private var lastSnapshot: Snapshot?
+    private var lastReload: Date?
 
     init(appearance: Appearance = Appearance()) {
         self.appearance = appearance
@@ -39,6 +42,7 @@ final class AppModel: ObservableObject {
         panel.hidesOnDeactivate = false
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         store.$overlay.sink { [weak self] state in self?.showOverlay(state) }.store(in: &subscriptions)
+        store.$connection.sink { [weak self] connection in self?.publish(connection) }.store(in: &subscriptions)
         store.objectWillChange.sink { [weak self] _ in self?.objectWillChange.send() }.store(in: &subscriptions)
         store.start()
     }
@@ -78,6 +82,18 @@ final class AppModel: ObservableObject {
     func quit() {
         store.stop()
         NSApplication.shared.terminate(nil)
+    }
+
+    private func publish(_ connection: ConnectionState) {
+        guard let url = snapshotURL() else { return }
+        let snapshot = Snapshot(connection: connection)
+        try? snapshot.write(to: url)
+        let now = Date()
+        if shouldReloadWidget(previous: lastSnapshot, next: snapshot, lastReload: lastReload, now: now) {
+            WidgetCenter.shared.reloadAllTimelines()
+            lastReload = now
+        }
+        lastSnapshot = snapshot
     }
 
     private func showOverlay(_ state: OverlayState) {
@@ -166,13 +182,19 @@ struct OverlayView: View {
     }
 }
 
+#if SWIFT_PACKAGE
+let resourceBundle = Bundle.module
+#else
+let resourceBundle = Bundle.main
+#endif
+
 @MainActor
 func gameIcon(_ key: String) -> NSImage? {
-    Bundle.module.url(forResource: key, withExtension: "png", subdirectory: "Resources").flatMap(NSImage.init(contentsOf:))
+    resourceBundle.url(forResource: key, withExtension: "png", subdirectory: "Resources").flatMap(NSImage.init(contentsOf:))
 }
 
 func registerPixelFont() {
-    guard let url = Bundle.module.url(forResource: "Silkscreen-Regular", withExtension: "ttf", subdirectory: "Resources")
+    guard let url = resourceBundle.url(forResource: "Silkscreen-Regular", withExtension: "ttf", subdirectory: "Resources")
     else { return }
     CTFontManagerRegisterFontsForURL(url as CFURL, .process, nil)
 }

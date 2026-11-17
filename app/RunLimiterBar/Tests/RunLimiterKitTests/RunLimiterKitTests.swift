@@ -315,3 +315,37 @@ private actor SuspendedClient: StatusClient {
     #expect(overlayContent(for: .hidden) == nil)
     #expect(overlayContent(for: .warning(target: "Game", secondsLeft: 30))?.progress == 1)
 }
+
+@Test func snapshotFromConnection() {
+    let live = Snapshot(connection: .connected(status(), at: date))
+    #expect(live == Snapshot(kind: .connected, status: status(), updatedAt: date))
+    let down = Snapshot(connection: .daemonDown(lastKnown: status(), since: date))
+    #expect(down == Snapshot(kind: .daemonDown, status: status(), updatedAt: date))
+    let never = Snapshot(connection: .daemonDown(lastKnown: nil, since: date))
+    #expect(never.status == nil)
+    let newer = Snapshot(connection: .unsupportedVersion(2), now: date)
+    #expect(newer == Snapshot(kind: .unsupportedVersion, status: nil, updatedAt: date))
+}
+
+@Test func snapshotFileRoundTrip() throws {
+    let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    let file = dir.appendingPathComponent("nested/snapshot.json")
+    #expect(Snapshot.read(from: file) == nil)
+    let snapshot = Snapshot(kind: .connected, status: status(3), updatedAt: date)
+    try snapshot.write(to: file)
+    #expect(Snapshot.read(from: file) == snapshot)
+    try Data("junk".utf8).write(to: file)
+    #expect(Snapshot.read(from: file) == nil)
+}
+
+@Test func widgetReloadThrottle() {
+    let a = Snapshot(kind: .connected, status: status(), updatedAt: date)
+    let sameLater = Snapshot(kind: .connected, status: status(), updatedAt: date.addingTimeInterval(5))
+    let blocked = Snapshot(kind: .connected, status: status(1, state: "exceeded"), updatedAt: date.addingTimeInterval(5))
+    let down = Snapshot(kind: .daemonDown, status: status(), updatedAt: date.addingTimeInterval(5))
+    #expect(shouldReloadWidget(previous: nil, next: a, lastReload: nil, now: date))
+    #expect(!shouldReloadWidget(previous: a, next: sameLater, lastReload: date, now: date.addingTimeInterval(5)))
+    #expect(shouldReloadWidget(previous: a, next: sameLater, lastReload: date, now: date.addingTimeInterval(60)))
+    #expect(shouldReloadWidget(previous: a, next: blocked, lastReload: date, now: date.addingTimeInterval(5)))
+    #expect(shouldReloadWidget(previous: a, next: down, lastReload: date, now: date.addingTimeInterval(5)))
+}
