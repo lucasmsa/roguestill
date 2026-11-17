@@ -23,10 +23,10 @@ pub fn diff(before: &Snapshot, after: &Snapshot) -> Vec<Event> {
     if before.world_file_count == 0 && after.world_file_count > 0 {
         events.push(Event::RunStarted);
     }
-    if before.world_file_count > 0 && after.world_file_count == 0 {
+    {
         let known: HashSet<_> = before.sessions.iter().map(|s| &s.run_start_name).collect();
         for session in &after.sessions {
-            if !known.contains(&session.run_start_name) {
+            if session.dead && !known.contains(&session.run_start_name) {
                 let start = session.run_start_name.clone();
                 let playtime_secs = session.playtime_secs;
                 events.push(if playtime_secs < 30.0 {

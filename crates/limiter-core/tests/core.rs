@@ -135,6 +135,7 @@ fn junk_threshold_and_quit_to_desktop() {
         assert_eq!(events.len(), 1);
         assert_eq!(matches!(events[0], Event::Junk { .. }), seconds == 29);
         assert_eq!(matches!(events[0], Event::RunEnded { .. }), seconds == 30);
+        after.sessions.clear();
         after.world_file_count = 12;
         assert!(diff(&before, &after).is_empty());
     }
@@ -172,4 +173,28 @@ fn strict_rules() {
     ] {
         assert!(parse(&invalid).is_err(), "{invalid}");
     }
+}
+
+#[test]
+fn death_seen_while_new_run_already_loading() {
+    let before = Snapshot {
+        world_file_count: 153,
+        ..Default::default()
+    };
+    let after = Snapshot {
+        world_file_count: 3,
+        sessions: vec![parse_stats(
+            "20261117-080256",
+            "<Stats playtime=\"1203.68\" dead=\"1\"/>",
+        )
+        .unwrap()],
+        ..Default::default()
+    };
+    assert_eq!(
+        diff(&before, &after),
+        vec![Event::RunEnded {
+            start: "20261117-080256".into(),
+            playtime_secs: 1203.68
+        }]
+    );
 }
