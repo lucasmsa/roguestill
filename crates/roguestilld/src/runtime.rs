@@ -60,6 +60,18 @@ impl Runtime {
             processes,
             wall,
         } = poll;
+        if let Some(next) = config
+            .rule
+            .iter()
+            .find(|r| r.name == self.rule.name && **r != self.rule)
+        {
+            if self.rule.target.process != next.target.process {
+                self.session = None;
+                self.snapshot = None;
+            }
+            self.rule = next.clone();
+            db.save_rule(day(clock, next.budget.values().1).0, next)?;
+        }
         let mut matched: Vec<_> = processes
             .iter()
             .filter(|p| platform::matches(p, &self.rule.target.process))
@@ -260,7 +272,7 @@ mod tests {
         );
     }
     #[test]
-    fn budget_edits_wait_for_reset() {
+    fn budget_edits_apply_immediately() {
         let clock = FakeClock(Cell::new(86390));
         let mut config = config();
         let db = Storage::open(Path::new(":memory:")).unwrap();
@@ -274,22 +286,14 @@ mod tests {
         clock.0.set(86395);
         assert_eq!(
             poll(&mut runtime, &clock, &db, &config).remaining_secs,
-            5395
+            7195
         );
+        assert_eq!(db.active().unwrap()[0].1.budget.values().0, 7200);
         clock.0.set(86400);
         assert_eq!(
             poll(&mut runtime, &clock, &db, &config).remaining_secs,
             7200
         );
         assert_eq!(db.totals(&runtime.rule.name, 0).unwrap().0, 10);
-        assert_eq!(db.active().unwrap()[0].1.budget.values().0, 7200);
-    }
-    #[test]
-    fn additions_wait_for_reset() {
-        let db = Storage::open(Path::new(":memory:")).unwrap();
-        assert!(db.addition_ready("initial", 1, true).unwrap());
-        assert!(!db.addition_ready("new", 1, false).unwrap());
-        assert!(!db.addition_ready("new", 1, false).unwrap());
-        assert!(db.addition_ready("new", 2, false).unwrap());
     }
 }

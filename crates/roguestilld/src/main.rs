@@ -6,12 +6,12 @@ mod storage;
 use runtime::Runtime;
 
 use chrono::{Datelike, Local, Timelike};
+use platform::{MacOs, ProcessWatcher};
 use roguestill_core::{
     budget::{day, Clock, LocalDay},
     rules,
     status::Status,
 };
-use platform::{MacOs, ProcessWatcher};
 use std::{
     error::Error,
     fs,
@@ -62,7 +62,6 @@ fn main() -> Result<()> {
     let listener = UnixListener::bind(&socket)?;
     fs::set_permissions(&socket, fs::Permissions::from_mode(0o600))?;
     let db = Storage::open(&base.join("usage.db"))?;
-    let initial = !db.initialized()?;
     db.log_config(Local::now().timestamp(), &config_text)?;
     let clock = RealClock(Instant::now());
     let saved = db.active()?;
@@ -82,9 +81,7 @@ fn main() -> Result<()> {
         }
     }
     for rule in &config.rule {
-        if !runtimes.iter().any(|r| r.rule.name == rule.name)
-            && db.addition_ready(&rule.name, day(&clock, rule.budget.values().1).0, initial)?
-        {
+        if !runtimes.iter().any(|r| r.rule.name == rule.name) {
             db.save_rule(day(&clock, rule.budget.values().1).0, rule)?;
             runtimes.push(Runtime::new(rule.clone(), &clock, &db)?);
         }
@@ -160,9 +157,7 @@ fn main() -> Result<()> {
         }
         runtimes.retain(|r| !removed.contains(&r.rule.name));
         for rule in &config.rule {
-            if !runtimes.iter().any(|r| r.rule.name == rule.name)
-                && db.addition_ready(&rule.name, day(&clock, rule.budget.values().1).0, false)?
-            {
+            if !runtimes.iter().any(|r| r.rule.name == rule.name) {
                 db.save_rule(day(&clock, rule.budget.values().1).0, rule)?;
                 runtimes.push(Runtime::new(rule.clone(), &clock, &db)?);
             }

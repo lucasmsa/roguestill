@@ -27,6 +27,12 @@ targets:
             destination: executables
             subpath: ""
         attributes: [CodeSignOnCopy]
+      - path: ../../target/release/roguestill
+        buildPhase:
+          copyFiles:
+            destination: executables
+            subpath: ""
+        attributes: [CodeSignOnCopy]
       - path: LaunchAgents/com.lucasmsa.roguestill.daemon.plist
         buildPhase:
           copyFiles:
@@ -37,7 +43,7 @@ targets:
         script: |
           export PATH="$HOME/.cargo/bin:$PATH"
           cd "$SRCROOT/../.."
-          cargo build --release -p roguestilld
+          cargo build --release -p roguestilld -p roguestill
     dependencies:
       - package: RoguestillKit
       - target: RoguestillWidget
@@ -52,6 +58,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.lucasmsa.roguestill
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        EXECUTABLE_NAME: RoguestillBar
   RoguestillWidget:
     type: app-extension
     platform: macOS

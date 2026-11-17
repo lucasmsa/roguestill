@@ -10,7 +10,7 @@ Roguestill exists because stopping on its own fails. Friction screens (a wait ti
 
 - No override in any UI. The watcher has no unlock path.
 - A LaunchAgent with KeepAlive restarts the watcher if it is quit or killed.
-- Limit changes are written to config and apply at the next 4am reset. Lowering takes effect then as well, so the rule is symmetric.
+- Limit changes were to apply at the next 4am reset. Superseded by 0006: edits apply immediately.
 - An accountability partner with a PIN was considered and rejected for v1: it needs a second person and sync.
 
 ## Consequences

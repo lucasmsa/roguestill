@@ -1,8 +1,7 @@
 use roguestill_core::{rules, status::Status};
 use std::{error::Error, fs, io::Read, os::unix::net::UnixStream, path::PathBuf, time::Duration};
 fn main() -> Result<(), Box<dyn Error>> {
-    let base =
-        PathBuf::from(std::env::var("HOME")?).join("Library/Application Support/roguestill");
+    let base = PathBuf::from(std::env::var("HOME")?).join("Library/Application Support/roguestill");
     let mut args = std::env::args().skip(1);
     match args.next().as_deref() {
         Some("status") => {
@@ -37,7 +36,28 @@ fn main() -> Result<(), Box<dyn Error>> {
                 rules::render(&rules::parse(&fs::read_to_string(path)?)?)?
             );
         }
-        _ => return Err("usage: roguestill status | roguestill rules [path]".into()),
+        Some("config") => {
+            let path = base.join("rules.toml");
+            println!(
+                "{}",
+                rules::to_json(&rules::parse(&fs::read_to_string(path)?)?)?
+            );
+        }
+        Some("config-set") => {
+            let mut input = String::new();
+            std::io::stdin().read_to_string(&mut input)?;
+            let text = rules::render(&rules::from_json(&input)?)?;
+            let path = base.join("rules.toml");
+            let temp = base.join("rules.toml.tmp");
+            fs::write(&temp, text)?;
+            fs::rename(temp, path)?;
+        }
+        _ => {
+            return Err(
+                "usage: roguestill status | rules [path] | config | config-set (JSON on stdin)"
+                    .into(),
+            )
+        }
     }
     Ok(())
 }

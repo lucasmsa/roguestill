@@ -210,3 +210,16 @@ fn default_rules_are_written_once_and_parse() {
     assert_eq!(std::fs::read_to_string(&path).unwrap(), "custom");
     std::fs::remove_dir_all(dir).unwrap();
 }
+
+#[test]
+fn config_json_round_trip_and_validation() {
+    use roguestill_core::rules::{from_json, to_json};
+    let config = parse(include_str!("../../../config/rules.example.toml")).unwrap();
+    let json = to_json(&config).unwrap();
+    let back = from_json(&json).unwrap();
+    assert_eq!(to_json(&back).unwrap(), json);
+    let bad = json.replace("\"limit_minutes\":90", "\"limit_minutes\":0");
+    assert_ne!(bad, json);
+    assert!(from_json(&bad).is_err());
+    assert!(from_json("{\"rule\":[]} junk").is_err());
+}

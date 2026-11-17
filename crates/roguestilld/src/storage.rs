@@ -12,30 +12,8 @@ impl Storage {
                 active_secs INTEGER NOT NULL, run_id TEXT, counted INTEGER NOT NULL DEFAULT 0,
                 UNIQUE(rule, run_id));
             CREATE TABLE IF NOT EXISTS active_rules (name TEXT PRIMARY KEY, day INTEGER NOT NULL, json TEXT NOT NULL);
-            CREATE TABLE IF NOT EXISTS pending_rules (name TEXT PRIMARY KEY, day INTEGER NOT NULL);
             CREATE TABLE IF NOT EXISTS rule_edits (at INTEGER NOT NULL, config TEXT NOT NULL);")?;
         Ok(Self(connection))
-    }
-    pub fn initialized(&self) -> rusqlite::Result<bool> {
-        self.0
-            .query_row("SELECT EXISTS(SELECT 1 FROM rule_edits)", [], |row| {
-                row.get(0)
-            })
-    }
-    pub fn addition_ready(&self, name: &str, day: i64, initial: bool) -> rusqlite::Result<bool> {
-        if initial {
-            return Ok(true);
-        }
-        self.0.execute(
-            "INSERT OR IGNORE INTO pending_rules VALUES (?1,?2)",
-            params![name, day],
-        )?;
-        let seen: i64 = self.0.query_row(
-            "SELECT day FROM pending_rules WHERE name=?1",
-            [name],
-            |row| row.get(0),
-        )?;
-        Ok(seen != day)
     }
     pub fn active(&self) -> rusqlite::Result<Vec<(i64, Rule)>> {
         let mut statement = self.0.prepare("SELECT day, json FROM active_rules")?;
@@ -63,8 +41,6 @@ impl Storage {
                 serde_json::to_string(rule).expect("rule serializes")
             ],
         )?;
-        self.0
-            .execute("DELETE FROM pending_rules WHERE name=?1", [&rule.name])?;
         Ok(())
     }
     pub fn totals(&self, name: &str, day: i64) -> rusqlite::Result<(u64, u64)> {

@@ -59,8 +59,7 @@ mod tests {
     use super::*;
     #[test]
     fn reads_real_save_layout_and_ignores_kills_xml() {
-        let path =
-            std::env::temp_dir().join(format!("roguestill-snapshot-{}", std::process::id()));
+        let path = std::env::temp_dir().join(format!("roguestill-snapshot-{}", std::process::id()));
         fs::create_dir_all(path.join("world/nested")).unwrap();
         fs::create_dir_all(path.join("stats/sessions")).unwrap();
         fs::write(path.join("world/nested/chunk"), "world").unwrap();

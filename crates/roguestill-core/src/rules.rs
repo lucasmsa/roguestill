@@ -9,7 +9,7 @@ pub struct Config {
     pub rule: Vec<Rule>,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct Rule {
     pub name: String,
@@ -19,19 +19,19 @@ pub struct Rule {
     pub action: Action,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct Target {
     pub process: String,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Adapter {
     Noita,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
 pub enum Budget {
     DailyTime {
@@ -58,7 +58,7 @@ impl Budget {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct Action {
     #[serde(default = "warn_default")]
@@ -70,7 +70,7 @@ pub struct Action {
 fn warn_default() -> u64 {
     10
 }
-#[derive(Clone, Debug, Default, Deserialize, Serialize)]
+#[derive(Clone, Debug, Default, PartialEq, Deserialize, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Relaunch {
     #[default]
@@ -115,4 +115,13 @@ pub fn ensure_default(path: &std::path::Path) -> std::io::Result<bool> {
     }
     std::fs::write(path, DEFAULT_RULES)?;
     Ok(true)
+}
+
+pub fn to_json(config: &Config) -> Result<String, String> {
+    serde_json::to_string(config).map_err(|e| e.to_string())
+}
+
+pub fn from_json(input: &str) -> Result<Config, String> {
+    let config: Config = serde_json::from_str(input).map_err(|e| e.to_string())?;
+    parse(&render(&config).map_err(|e| e.to_string())?)
 }

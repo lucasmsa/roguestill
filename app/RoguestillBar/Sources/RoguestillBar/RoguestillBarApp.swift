@@ -133,6 +133,8 @@ struct MenuContent: View {
     let openSettings: () -> Void
     let quit: () -> Void
 
+    @Environment(\.openWindow) private var openWindow
+
     var body: some View {
         if let message { Text(message) }
         if let lastSeen { Text(lastSeen).foregroundStyle(.secondary) }
@@ -147,6 +149,11 @@ struct MenuContent: View {
         }
         if needsSettings { Button("Open Login Items", action: openSettings) }
         Divider()
+        Button("Settings…") {
+            openWindow(id: "settings")
+            NSApplication.shared.activate(ignoringOtherApps: true)
+        }
+        .keyboardShortcut(",")
         Button("Quit", action: quit).keyboardShortcut("q")
     }
 }
@@ -217,6 +224,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 struct RoguestillBarApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var delegate
     @StateObject private var model = AppModel()
+    @StateObject private var settings = SettingsModel()
 
     var body: some Scene {
         MenuBarExtra("roguestill", systemImage: model.icon) {
@@ -224,5 +232,9 @@ struct RoguestillBarApp: App {
                         offline: model.offline, needsSettings: model.needsSettings,
                         openSettings: { openLoginItems(); model.refreshAgent() }, quit: model.quit)
         }
+        Window("Roguestill Settings", id: "settings") {
+            SettingsView(model: settings)
+        }
+        .windowResizability(.contentSize)
     }
 }

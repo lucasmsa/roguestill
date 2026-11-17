@@ -24,7 +24,7 @@ The first design hardcoded one budget shape and Swift for the watcher. The tool 
 - Mindful pause is launch friction only: a screen shown before the app is allowed to continue. It never adds budget. Grace extensions are rejected, per 0003.
 - The block is an animated overlay over the blocked app only. The core emits `blocked(target, reason)`; the client draws the overlay. Until the look is chosen with /visual-options, the placeholder is a plain grey shield.
 - Storage: rules in a TOML file (editable, diffable), usage in SQLite with one row per session and per run (target, start, end, active seconds, run id). Budgets are recomputed from rows, not read from a counter.
-- Tamper stance is 0003: KeepAlive restarts the daemon, rule edits are logged and apply at the next reset.
+- Tamper stance is 0003: KeepAlive restarts the daemon, rule edits are logged (apply live since 0006).
 
 ## Build order
 
@@ -39,4 +39,4 @@ The first design hardcoded one budget shape and Swift for the watcher. The tool 
 - Adding a game is one adapter plus one rule; adding a limit type is one budget variant.
 - Two languages: the Swift clients depend on the JSON socket contract, which must be versioned.
 - Midnight reset lets a 23:50 session and a 00:20 session each use a full budget. Accepted.
-- Edits mid-day do not apply until the reset, so a mistaken limit stays until then (0003).
+- Edits apply immediately (0006), so a mistaken limit can be fixed at once.

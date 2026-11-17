@@ -358,3 +358,47 @@ private actor SuspendedClient: StatusClient {
     #expect(agentNeedsSettings(.requiresApproval))
     #expect(!agentNeedsSettings(.enabled))
 }
+
+private let sampleConfig = #"{"noita_save_path":"~/save00","rule":[{"name":"Noita","target":{"process":"noita.exe"},"adapter":"noita","budget":{"kind":"daily_time","limit_minutes":90,"reset_hour":0,"idle_pause_minutes":5},"action":{"warn_seconds":10,"kill":true,"relaunch":"kill_again"}}]}"#
+
+@Test func rulesConfigRoundTrip() throws {
+    var config = try JSONDecoder().decode(RulesConfig.self, from: Data(sampleConfig.utf8))
+    #expect(config.rule[0].name == "Noita")
+    #expect(config.rule[0].budget.limitMinutes == 90)
+    #expect(config.rule[0].action.kill)
+    config.rule[0].budget.limitMinutes = 120
+    let object = try #require(JSONSerialization.jsonObject(with: JSONEncoder().encode(config)) as? [String: Any])
+    let rule = try #require((object["rule"] as? [[String: Any]])?.first)
+    let budget = try #require(rule["budget"] as? [String: Any])
+    #expect(budget["limit_minutes"] as? Int == 120)
+    #expect(budget["kind"] as? String == "daily_time")
+    #expect(object["noita_save_path"] as? String == "~/save00")
+    #expect(try JSONDecoder().decode(RulesConfig.self, from: JSONEncoder().encode(config)) == config)
+}
+
+@Test func newGameRuleHasSaneDefaults() {
+    let rule = GameRule.new(name: "Hades", process: "Hades.exe")
+    #expect(rule.budget.limitMinutes == 60 && rule.action.warnSeconds == 10 && rule.action.kill)
+    #expect(rule.adapter == nil)
+}
+
+@Test func processConfigClientLoadsAndSaves() async throws {
+    let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+    let out = dir.appendingPathComponent("saved.json")
+    let script = dir.appendingPathComponent("cli.sh")
+    try """
+    #!/bin/sh
+    if [ "$1" = "config" ]; then echo '\(sampleConfig)'; else cat > '\(out.path)'; fi
+    """.write(to: script, atomically: true, encoding: .utf8)
+    try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: script.path)
+    let client = ProcessConfigClient(executable: script)
+    var config = try await client.load()
+    #expect(config.rule.count == 1)
+    config.rule[0].budget.limitMinutes = 45
+    try await client.save(config)
+    let saved = try JSONDecoder().decode(RulesConfig.self, from: Data(contentsOf: out))
+    #expect(saved.rule[0].budget.limitMinutes == 45)
+    let failing = ProcessConfigClient(executable: dir.appendingPathComponent("missing"))
+    await #expect(throws: (any Error).self) { try await failing.load() }
+}
