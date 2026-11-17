@@ -1,1 +1,4 @@
 /target/
+.DS_Store
+usage.db
+app/RoguestillBar/Sources/RoguestillBar/Resources/noita.png

@@ -8,7 +8,7 @@ packages:
     path: .
 settings:
   base:
-    DEVELOPMENT_TEAM: 6S85XSVS8M
+    DEVELOPMENT_TEAM: ${DEVELOPMENT_TEAM}
     SWIFT_VERSION: "6.0"
     CODE_SIGN_STYLE: Automatic
 targets:
